@@ -29,8 +29,8 @@ static threadStruct_t threads[NUM_THREADS];
 // threadStarter() for each thread).
 extern void createThread(char *stack);
 
-extern void saveThreadState(threadStruct_t *p_thread);
-extern void restoreThreadState(threadStruct_t *p_thread);
+extern void saveThreadState(unsigned *p_registers);
+extern void restoreThreadState(unsigned *p_registers);
 
 
 //The SVC Handler interprets the arguments for SVC Calls
