@@ -18,3 +18,29 @@ void SysTickHandler()
    //call the scheduler function in the scheduler file
    scheduler();
 }
+
+void Timer0AInit()
+{
+   //Enable Timer 0 Peripheral
+   SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+
+   //Configure and Set Timer 0A
+   TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+   TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 1);   //1Hz?
+
+   //Enable the Timer 0A interrupt
+   IntEnable(INT_TIMER0A);
+   TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
+   //Enable Timer 0A
+   TimerEnable(TIMER0_BASE, TIMER_A);
+}
+
+void Timer0IntHandler(void)
+{
+   //Clear Timer 0 interrupt flag
+   TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
+   //tell the threads that the timer interrupt fired
+   notifyThreads();
+}

@@ -1,3 +1,6 @@
+#ifndef THREADS_H_
+#define THREADS_H_
+
 #include <stdio.h>
 #include "scheduler.h"
 
@@ -7,27 +10,26 @@
 // currThread which indicates the number of the thread currently
 // running.
 
-void thread1(void)
+static unsigned _Thread_UART_notify = 0;
+static unsigned _Thread_OLED_notify = 0;
+static unsigned _Thread_LED_notify = 0;
+
+void thread_UART(void)
 {
   unsigned count;
 
   for (count = 0; count < 10; count++) {
-    iprintf("In thread %u -- pass %d\r\n", currThread, count);
+    iprintf("In UART thread %u -- pass %d\r\n", currThread, count);
     yield();
   }
 }
 
-void thread2(void)
+void thread_OLED(void)
 {
-  unsigned count;
 
-  for (count=0; count < 5; count++) {
-    iprintf("In thread %u -- pass %d\r\n", currThread, count);
-    yield();
-  }
 }
 
-void thread3(void)
+void thread_LED(void)
 {
   unsigned count;
 
@@ -37,12 +39,10 @@ void thread3(void)
   }
 }
 
-void thread4(void)
+void thread_idle()
 {
-  unsigned count;
-
-  for (count=0; count < 15; count++) {
-    //do nothing of consequence
-    yield();
-  }
+  //this keeps the processor running when there is no work to do.
+  while(1);
 }
+
+#endif
