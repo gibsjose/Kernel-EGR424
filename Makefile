@@ -1,17 +1,52 @@
-# Modify as appropriate
-STELLARISWARE=C:/StellarisWare
+# Generic Makefile template for ARMv7 Cortex M3 MCU
+# Created by JJG
 
-CC=arm-none-eabi-gcc -Wall -Os -march=armv7-m -mcpu=cortex-m3 -mthumb -mfix-cortex-m3-ldrd -Wl,--gc-sections
-	
-# This creates the .BIN file once the .ELF file is created
-crsched.bin: crsched.elf
-	arm-none-eabi-objcopy -O binary crsched.elf crsched.bin
+CC = arm-none-eabi-gcc
+CFLAGS = -Wall -std=c99 -g -Os -march=armv7-m -mcpu=cortex-m3 -mthumb -mfix-cortex-m3-ldrd -Wl,--gc-sections
 
-crsched.elf: crsched.c
-	${CC} -o $@ -I${STELLARISWARE} -L${STELLARISWARE}/driverlib/gcc-cm3 -Tlinkscript.x -Wl,-Map,crsched.map -Wl,--entry,ResetISR crsched.c create.S scheduler.c threads.c startup_gcc.c syscalls.c rit128x96x4.c -ldriver-cm3
+SRC_DIR = .
+BIN_DIR = .
 
-.PHONY: clean
+# StellarisWare ek-lm3s6965 Driver Directory
+DRV_DIR = C\:/StellarisWare/boards/ek-lm3s6965/drivers
+UTILS_DIR = C\:/StellarisWare/utils
+
+INCLUDES = -IC\:/StellarisWare -IC\:/StellarisWare/boards/ek-lm3s6965
+LINKPATHS = -LC\:/StellarisWare/driverlib/gcc-cm3 -LC\:/Program\ Files\ \(x86\)/CodeSourcery/Sourcery\ G++\ Lite/arm-none-eabi/lib/thumb2/
+
+SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/create.S $(SRC_DIR)/scheduler.c $(SRC_DIR)/threads.c $(SRC_DIR)$(SRC_DIR)/timer_driver.c $(SRC_DIR)/oled_driver.c $(SRC_DIR)/startup_gcc.c $(SRC_DIR)/syscalls.c $(DRV_DIR)/rit128x96x4.c
+LIBS = -ldriver-cm3
+OBJS = $(SOURCES:.c=.o)
+
+TARGETNAME = kernel_gibson_luckenbaugh
+ELF = $(BIN_DIR)/$(TARGETNAME).elf
+BIN = $(BIN_DIR)/$(TARGETNAME).bin
+
+MAP = crsched.map
+LS = $(SRC_DIR)/linkscript.x
+
+TARGET = $(BIN)
+
+all: $(TARGET)
+
+%.o: %.c
+	@echo "Building $@... "
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+	@echo "Done"
+	@echo " "
+
+$(ELF): $(OBJS)
+	@echo "Building $@... "
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(ELF) -T $(LS) $(LINKPATHS) -Wl,-Map,$(MAP) -Wl,--entry=ResetISR $(OBJS) $(LIBS)
+	@echo "Done"
+	@echo " "
+
+$(TARGET): $(ELF) $(OBJS)
+	@echo "Building $@... "
+	arm-none-eabi-objcopy -O binary $(TARGETNAME).elf $(TARGET)
+	@cp -f $(TARGET) "/cygdrive/c/Users/$(USER)/Desktop"
+	@echo "Done"
+	@echo " "
+
 clean:
-	rm -f *.elf *.map *.bin
-
-# vim: noexpandtab  
+	rm -f $(TARGET) $(BIN) $(ELF) $(OBJS)

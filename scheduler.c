@@ -1,18 +1,5 @@
 #include "scheduler.h"
 
-//#define STACK_SIZE (4096)   // Amount of stack space for each thread
-#define STACK_SIZE (1532 + 64)  //include the 64 bytes for exception handling
-
-typedef struct {
-  int active;       // non-zero means thread is allowed to run
-  char *stack;      // pointer to TOP of stack (highest memory location)
-  jmp_buf state;    // saved state for longjmp()
-} threadStruct_t;
-
-// thread_t is a pointer to function with no parameters and
-// no return value...i.e., a user-space thread.
-typedef void (*thread_t)(void);
-
 // These are the external user-space threads. In this program, we create
 // the threads statically by placing their function addresses in
 // threadTable[]. A more realistic kernel will allow dynamic creation
@@ -28,6 +15,7 @@ static thread_t threadTable[] = {
   thread3,
   thread4
 };
+
 #define NUM_THREADS (sizeof(threadTable)/sizeof(threadTable[0]))
 
 // These static global variables are used in scheduler(), in
