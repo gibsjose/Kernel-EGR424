@@ -1,8 +1,6 @@
-#ifndef THREADS_H_
-#define THREADS_H_
-
 #include <stdio.h>
 #include "scheduler.h"
+#include "oled_driver.h"
 
 #define LED_TI (HWREG(0x40025000 + 0x004))
 
@@ -11,7 +9,6 @@
 // scheduler is the single function yield() and the global variable
 // currThread which indicates the number of the thread currently
 // running.
-
 extern unsigned currThread;
 
 void thread_UART(void)
@@ -42,5 +39,3 @@ void thread_idle()
   //this keeps the processor running when there is no work to do.
   while(1);
 }
-
-#endif

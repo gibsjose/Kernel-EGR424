@@ -2,7 +2,7 @@
 # Created by JJG
 
 CC = arm-none-eabi-gcc
-CFLAGS = -Wall -std=c99 -g -Os -march=armv7-m -mcpu=cortex-m3 -mthumb -mfix-cortex-m3-ldrd -Wl,--gc-sections
+CFLAGS = -Wall -g -Os -march=armv7-m -mcpu=cortex-m3 -mthumb -mfix-cortex-m3-ldrd -Wl,--gc-sections
 
 SRC_DIR = .
 BIN_DIR = .
@@ -14,7 +14,7 @@ UTILS_DIR = C\:/StellarisWare/utils
 INCLUDES = -IC\:/StellarisWare -IC\:/StellarisWare/boards/ek-lm3s6965
 LINKPATHS = -LC\:/StellarisWare/driverlib/gcc-cm3 -LC\:/Program\ Files\ \(x86\)/CodeSourcery/Sourcery\ G++\ Lite/arm-none-eabi/lib/thumb2/
 
-SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/create.S $(SRC_DIR)/scheduler.c $(SRC_DIR)/threads.c $(SRC_DIR)$(SRC_DIR)/timer_driver.c $(SRC_DIR)/oled_driver.c $(SRC_DIR)/startup_gcc.c $(SRC_DIR)/syscalls.c $(DRV_DIR)/rit128x96x4.c
+SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/scheduler.c $(SRC_DIR)/threads.c $(SRC_DIR)/timer_driver.c $(SRC_DIR)/oled_driver.c $(SRC_DIR)/startup_gcc.c $(SRC_DIR)/syscalls.c $(DRV_DIR)/rit128x96x4.c
 LIBS = -ldriver-cm3
 OBJS = $(SOURCES:.c=.o)
 
@@ -37,7 +37,7 @@ all: $(TARGET)
 
 $(ELF): $(OBJS)
 	@echo "Building $@... "
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(ELF) -T $(LS) $(LINKPATHS) -Wl,-Map,$(MAP) -Wl,--entry=ResetISR $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(ELF) -T$(LS) $(LINKPATHS) -Wl,-Map,$(MAP) -Wl,--entry=ResetISR create.S $(OBJS) $(LIBS)
 	@echo "Done"
 	@echo " "
 

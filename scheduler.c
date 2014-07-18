@@ -8,9 +8,6 @@ extern void thread_LED(void);
 //SVC Code handler
 void handleSVC(int code);
 
-// Thread Table
-static threadStruct_t threads[NUM_THREADS];
-
 //Currently Active Thread
 unsigned currThread;
 
@@ -22,6 +19,19 @@ static thread_t threadTable[] = {
 };
 
 #define NUM_THREADS (sizeof(threadTable)/sizeof(threadTable[0]))
+
+// Thread Table
+static threadStruct_t threads[NUM_THREADS];
+
+//This function is implemented in assembly language. It sets up the
+// initial jump-buffer (as would setjmp()) but with our own values
+// for the stack (passed to createThread()) and LR (always set to
+// threadStarter() for each thread).
+extern void createThread(char *stack);
+
+extern void saveThreadState(threadStruct_t *p_thread);
+extern void restoreThreadState(threadStruct_t *p_thread);
+
 
 //The SVC Handler interprets the arguments for SVC Calls
 // so that user threads can properly yield() by generating
@@ -38,7 +48,7 @@ void SVCHandler(void)
 //Generates a SysTick Interrupt
 void generateSysTickInterrupt(void)
 {
-  PENDSTSET |= 0x01;
+  NVIC_INT_CTRL_R |= NVIC_INT_CTRL_PENDSTSET;
 }
 
 //Changes from privileged to unprivileged
@@ -48,25 +58,6 @@ void privToUnpriv(void)
                 "orr r3, r3, #1\n"
                 "msr control, r3\n"
                 "isb"
-    );
-}
-
-//Changes from unprivileged to privileged
-void unprivToPriv(void)
-{
-  asm volatile( "mrs r3, control\n"
-                "and r3, r3, 0xfe\n"
-                "msr control, r3\n"
-                "isb"
-    );
-}
-
-//Obtains the current privilege level
-int getPriv(void)
-{
-  asm volatile( "mrs r3, control\n"
-                "and r0, r3, #1\n"
-                "bx lr"
     );
 }
 
@@ -81,47 +72,48 @@ void handleSVC(int code)
   }
 }
 
-//Scheduler (SYSTick 1ms Handler)
+//Scheduler (SysTick 1ms Handler)
 void Scheduler(void)
 {
   unsigned i;
-  currThread = -1;
+
+  if (!threads[currThread].active) 
+  {
+    free(threads[currThread].stack - STACK_SIZE);
+    threads[currThread].stack = NULL;
+  }
+  else
+  {
+    //Save current thread state if it is still active
+    saveThreadState(threads[currThread].registers);
+  }
   
+  i = NUM_THREADS;
+
+  //Determine the next  thread to run
   do {
-
-    if (!Yielded) {
-
-      // We saved the state of the scheduler, now find the next
-      // runnable thread in round-robin fashion. The 'i' variable
-      // keeps track of how many runnable threads there are. If we
-      // make a pass through threads[] and all threads are inactive,
-      // then 'i' will become 0 and we can exit the entire program.
-      i = NUM_THREADS;
-      do {
-        // Round-robin scheduler
-        if (++currThread == NUM_THREADS) {
-          currThread = 0;
-        }
-
-        if (threads[currThread].active) {
-          longjmp(threads[currThread].state, 1);
-        } else {
-          i--;
-        }
-      } while (i > 0);
-
-      // No active threads left. Leave the scheduler, hence the program.
-      return;
-
-    } else {
-      // yield() returns here. Did the thread that just yielded to us exit? If
-      // so, clean up its entry in the thread table.
-
-      if (! threads[currThread].active) {
-        free(threads[currThread].stack - STACK_SIZE);
-      }
+    // Round-robin scheduler
+    if (++currThread == NUM_THREADS) 
+    {
+      currThread = 0;
     }
-  } while (1);
+
+    if (threads[currThread].active)
+    {
+      //Change to unprivileged level
+      privToUnpriv();
+
+      //Restore the thread state for the thread about to be executed
+      restoreThreadState(threads[currThread].registers);
+    } 
+    else 
+    {
+      i--;
+    }
+  } while (i > 0);
+  
+  // No active threads left. Leave the scheduler, hence the program.
+  return;
 }
 
 //Scheduler Initialization
@@ -131,8 +123,10 @@ void Scheduler(void)
 //  - Calls the createThread() function to create the thread
 void initScheduler(void)
 {
+  unsigned i;
+
   // Create all the threads and allocate a stack for each one
-  for (int i = 0; i < NUM_THREADS; i++) 
+  for (i = 0; i < NUM_THREADS; i++) 
   {
     //Mark thread as runnable
     threads[i].active = 1;
@@ -140,12 +134,12 @@ void initScheduler(void)
     //Allocate stack
     threads[i].stack = (char *)malloc(STACK_SIZE) + STACK_SIZE;
     if (threads[i].stack == 0) {
-      iprintf("Out of memory\r\n");
+      //Out of memory; exit gracefully
       exit(1);
     }
 
     //Create each thread
-    createThread(threads[i].state, threads[i].stack);
+    createThread(threads[i].stack);
   }
 }
 
@@ -177,9 +171,3 @@ void threadStarter(void)
   // the scheduler identifies the thread as inactive.
   yield();
 }
-
-//This function is implemented in assembly language. It sets up the
-// initial jump-buffer (as would setjmp()) but with our own values
-// for the stack (passed to createThread()) and LR (always set to
-// threadStarter() for each thread).
-extern void createThread(jmp_buf buf, char *stack);
