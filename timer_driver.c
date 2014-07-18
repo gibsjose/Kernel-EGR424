@@ -42,5 +42,5 @@ void Timer0IntHandler(void)
    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 
    //tell the threads that the timer interrupt fired
-   notifyThreads();
+   //deal with this later
 }
