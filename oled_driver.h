@@ -9,11 +9,7 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/interrupt.h"
-
 #include "drivers/rit128x96x4.h"
-
-//Include standard C libs
-#include "utils/ustdlib.h"
 
 #define MAX_BRIGHTNESS 	15	//Maximum brightness
 #define MIN_BRIGHTNESS  5   //Minimum brightness

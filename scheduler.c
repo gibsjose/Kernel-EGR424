@@ -1,81 +1,147 @@
 #include "scheduler.h"
 
-// These are the external user-space threads. In this program, we create
-// the threads statically by placing their function addresses in
-// threadTable[]. A more realistic kernel will allow dynamic creation
-// and termination of threads.
-extern void thread1(void);
-extern void thread2(void);
-extern void thread3(void);
-extern void thread4(void);
+//External user-space threads
+extern void thread_UART(void);
+extern void thread_OLED(void);
+extern void thread_LED(void);
 
+//SVC Code handler
+void handleSVC(int code);
+
+// Thread Table
+static threadStruct_t threads[NUM_THREADS];
+
+//Currently Active Thread
+unsigned currThread;
+
+//Thread Function Table
 static thread_t threadTable[] = {
-  thread1,
-  thread2,
-  thread3,
-  thread4
+  thread_UART,
+  thread_OLED,
+  thread_LED
 };
 
 #define NUM_THREADS (sizeof(threadTable)/sizeof(threadTable[0]))
 
-// These static global variables are used in scheduler(), in
-// the yield() function, and in threadStarter()
-static jmp_buf scheduler_buf;   // saves the state of the scheduler
-static threadStruct_t threads[NUM_THREADS]; // the thread table
-unsigned currThread;    // The currently active thread
-
-// This function is called from within user thread context. It executes
-// a jump back to the scheduler. When the scheduler returns here, it acts
-// like a standard function return back to the caller of yield().
-void yield(void)
+//The SVC Handler interprets the arguments for SVC Calls
+// so that user threads can properly yield() by generating
+// a SYSTick interrupt, which requires privileged access
+void SVCHandler(void)
 {
-  if (setjmp(threads[currThread].state) == 0) {
-    // yield() called from the thread, jump to scheduler context
-    longjmp(scheduler_buf, 1);
-  } else {
-    // longjmp called from scheduler, return to thread context
-    return;
+  asm volatile ("ldr r0, [r13, #24]\n"
+                "sub r0, r0, #2\n"
+                "ldrb r0, [r0]\n"
+                "b handleSVC\n"
+    );
+}
+
+//Generates a SysTick Interrupt
+void generateSysTickInterrupt(void)
+{
+  PENDSTSET |= 0x01;
+}
+
+//Changes from privileged to unprivileged
+void privToUnpriv(void)
+{
+  asm volatile( "mrs r3, control\n"
+                "orr r3, r3, #1\n"
+                "msr control, r3\n"
+                "isb"
+    );
+}
+
+//Changes from unprivileged to privileged
+void unprivToPriv(void)
+{
+  asm volatile( "mrs r3, control\n"
+                "and r3, r3, 0xfe\n"
+                "msr control, r3\n"
+                "isb"
+    );
+}
+
+//Obtains the current privilege level
+int getPriv(void)
+{
+  asm volatile( "mrs r3, control\n"
+                "and r0, r3, #1\n"
+                "bx lr"
+    );
+}
+
+//Handles SVC Codes: yield() will raise an SVC Exception
+// so that it can generate a SysTick Interrupt, but it must be in
+// privileged mode to do so, thus the SVC architecture
+void handleSVC(int code)
+{
+  if(code == YIELD)
+  {
+    generateSysTickInterrupt();
   }
 }
 
-void reportFreeStackSpace(unsigned threadID)
+//Scheduler (SYSTick 1ms Handler)
+void Scheduler(void)
 {
-  //determine the number of bytes starting from the bottom of the stack that still have 0xFF in them
-  //The thread's stack should be balanced at this stage, so the .stack value will be what malloc originally returned.
-  char * lPtr = threads[threadID].stack - STACK_SIZE;
-  while(*lPtr++ == 0xFF);
-  //now lPtr points to the location one byte past the last untouched memory location, so move it back down
-  lPtr--;
 
-  iprintf("Thread %u:\r\n", threadID);
-  iprintf("\tStart Address: %x\r\n", (unsigned)threads[threadID].stack);                      //top of stack
-  iprintf("\tStop Address: %x\r\n", (unsigned)lPtr);                                          //last used location on the stack
-  iprintf("\tBytes used: %u\r\n", (unsigned) (threads[threadID].stack - lPtr) );              //number of bytes used on the stack
-  iprintf("\tBytes free: %u\r\n", STACK_SIZE - (unsigned)(threads[threadID].stack - lPtr) );  //number of bytes left over on the stack
 }
 
-// This is the starting point for all threads. It runs in user thread
+//Scheduler Initialization
+// For each thread:
+//  - Marks as active
+//  - Allocates the Process Stack
+//  - Calls the createThread() function to create the thread
+void initScheduler(void)
+{
+  // Create all the threads and allocate a stack for each one
+  for (int i = 0; i < NUM_THREADS; i++) 
+  {
+    //Mark thread as runnable
+    threads[i].active = 1;
+
+    //Allocate stack
+    threads[i].stack = (char *)malloc(STACK_SIZE) + STACK_SIZE;
+    if (threads[i].stack == 0) {
+      iprintf("Out of memory\r\n");
+      exit(1);
+    }
+
+    //Create each thread
+    createThread(threads[i].state, threads[i].stack);
+  }
+}
+
+//This function is called from within user thread context. It allows the user
+// threads to give up their time slot and returns the context to the Scheduler
+void yield(void)
+{
+  //Generate an SVC Exception with YIELD Code (0x88)
+  asm volatile ("svc #0x88");
+}
+
+//This is the starting point for all threads. It runs in user thread
 // context using the thread-specific stack. The address of this function
 // is saved by createThread() in the LR field of the jump buffer so that
 // the first time the scheduler() does a longjmp() to the thread, we
 // start here.
 void threadStarter(void)
 {
-  // Call the entry point for this thread. The next line returns
+  //Call the entry point for this thread. The next line returns
   // only when the thread exits.
   (*(threadTable[currThread]))();
 
-  // Do thread-specific cleanup tasks. Currently, this just means marking
+  //Do thread-specific cleanup tasks. Currently, this just means marking
   // the thread as inactive. Do NOT free the stack here because we're
   // still using it! Remember, this function runs in user thread context.
   threads[currThread].active = 0;
 
-  // This yield returns to the scheduler and never returns back since
+  //This yield returns to the scheduler and never returns back since
   // the scheduler identifies the thread as inactive.
   yield();
 }
 
-// This function is implemented in assembly language. It sets up the
+//This function is implemented in assembly language. It sets up the
 // initial jump-buffer (as would setjmp()) but with our own values
 // for the stack (passed to createThread()) and LR (always set to
 // threadStarter() for each thread).
@@ -120,7 +186,6 @@ void scheduler(void)
       // so, clean up its entry in the thread table.
 
       if (! threads[currThread].active) {
-        reportFreeStackSpace(currThread);
         free(threads[currThread].stack - STACK_SIZE);
       }
     }
