@@ -84,7 +84,44 @@ void handleSVC(int code)
 //Scheduler (SYSTick 1ms Handler)
 void Scheduler(void)
 {
+  unsigned i;
+  currThread = -1;
+  
+  do {
 
+    if (!Yielded) {
+
+      // We saved the state of the scheduler, now find the next
+      // runnable thread in round-robin fashion. The 'i' variable
+      // keeps track of how many runnable threads there are. If we
+      // make a pass through threads[] and all threads are inactive,
+      // then 'i' will become 0 and we can exit the entire program.
+      i = NUM_THREADS;
+      do {
+        // Round-robin scheduler
+        if (++currThread == NUM_THREADS) {
+          currThread = 0;
+        }
+
+        if (threads[currThread].active) {
+          longjmp(threads[currThread].state, 1);
+        } else {
+          i--;
+        }
+      } while (i > 0);
+
+      // No active threads left. Leave the scheduler, hence the program.
+      return;
+
+    } else {
+      // yield() returns here. Did the thread that just yielded to us exit? If
+      // so, clean up its entry in the thread table.
+
+      if (! threads[currThread].active) {
+        free(threads[currThread].stack - STACK_SIZE);
+      }
+    }
+  } while (1);
 }
 
 //Scheduler Initialization
@@ -146,48 +183,3 @@ void threadStarter(void)
 // for the stack (passed to createThread()) and LR (always set to
 // threadStarter() for each thread).
 extern void createThread(jmp_buf buf, char *stack);
-
-// This is the "main loop" of the program.
-void scheduler(void)
-{
-  unsigned i;
-
-  currThread = -1;
-  
-  do {
-    // It's kinda inefficient to call setjmp() every time through this
-    // loop, huh? I'm sure your code will be better.
-    if (setjmp(scheduler_buf)==0) {
-
-      // We saved the state of the scheduler, now find the next
-      // runnable thread in round-robin fashion. The 'i' variable
-      // keeps track of how many runnable threads there are. If we
-      // make a pass through threads[] and all threads are inactive,
-      // then 'i' will become 0 and we can exit the entire program.
-      i = NUM_THREADS;
-      do {
-        // Round-robin scheduler
-        if (++currThread == NUM_THREADS) {
-          currThread = 0;
-        }
-
-        if (threads[currThread].active) {
-          longjmp(threads[currThread].state, 1);
-        } else {
-          i--;
-        }
-      } while (i > 0);
-
-      // No active threads left. Leave the scheduler, hence the program.
-      return;
-
-    } else {
-      // yield() returns here. Did the thread that just yielded to us exit? If
-      // so, clean up its entry in the thread table.
-
-      if (! threads[currThread].active) {
-        free(threads[currThread].stack - STACK_SIZE);
-      }
-    }
-  } while (1);
-}

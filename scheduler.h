@@ -14,7 +14,7 @@ typedef struct {
 // no return value...i.e., a user-space thread.
 typedef void (*thread_t)(void);
 
-extern unsigned currThread;
-extern void yield(void);
+//Yield() function
+void yield(void);
 
 #endif //_SCHEDULER_H_
