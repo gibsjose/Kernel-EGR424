@@ -33,9 +33,14 @@ int main(void)
                        UART_CONFIG_PAR_NONE));
 
   //Initialize Scheduler/Threads
-  initScheduler();
+  initThreads();
 
   //THREADS SHOULD BE RUNNING!
+  SysTickInit();
 
+  privToUnpriv();
+  yield();  //never returns
+
+  while(1);
   exit(0);
 }

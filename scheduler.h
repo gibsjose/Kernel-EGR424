@@ -20,6 +20,9 @@ typedef struct {
 // no return value...i.e., a user-space thread.
 typedef void (*thread_t)(void);
 
+void initThreads(void);
+void privToUnpriv(void);
+
 //Yield() function
 void yield(void);
 

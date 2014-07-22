@@ -32,25 +32,6 @@ extern void createThread(char *stack);
 extern void saveThreadState(unsigned *p_registers);
 extern void restoreThreadState(unsigned *p_registers);
 
-
-//The SVC Handler interprets the arguments for SVC Calls
-// so that user threads can properly yield() by generating
-// a SYSTick interrupt, which requires privileged access
-void SVCHandler(void)
-{
-  asm volatile ("ldr r0, [r13, #24]\n"
-                "sub r0, r0, #2\n"
-                "ldrb r0, [r0]\n"
-                "b handleSVC\n"
-    );
-}
-
-//Generates a SysTick Interrupt
-void generateSysTickInterrupt(void)
-{
-  NVIC_INT_CTRL_R |= NVIC_INT_CTRL_PENDSTSET;
-}
-
 //Changes from privileged to unprivileged
 void privToUnpriv(void)
 {
@@ -59,17 +40,6 @@ void privToUnpriv(void)
                 "msr control, r3\n"
                 "isb"
     );
-}
-
-//Handles SVC Codes: yield() will raise an SVC Exception
-// so that it can generate a SysTick Interrupt, but it must be in
-// privileged mode to do so, thus the SVC architecture
-void handleSVC(int code)
-{
-  if(code == YIELD)
-  {
-    generateSysTickInterrupt();
-  }
 }
 
 //Scheduler (SysTick 1ms Handler)
@@ -100,11 +70,12 @@ void Scheduler(void)
 
     if (threads[currThread].active)
     {
-      //Change to unprivileged level
-      privToUnpriv();
-
       //Restore the thread state for the thread about to be executed
       restoreThreadState(threads[currThread].registers);
+
+      //fake a return to thread mode with unpriviledged access using the process stack
+      asm volatile("mov r1, 0xFFFFFFFFd\n"
+                   "bx r1\n");
     } 
     else 
     {
@@ -116,12 +87,12 @@ void Scheduler(void)
   return;
 }
 
-//Scheduler Initialization
+//Thread Initialization
 // For each thread:
 //  - Marks as active
 //  - Allocates the Process Stack
 //  - Calls the createThread() function to create the thread
-void initScheduler(void)
+void initThreads(void)
 {
   unsigned i;
 
@@ -170,4 +141,34 @@ void threadStarter(void)
   //This yield returns to the scheduler and never returns back since
   // the scheduler identifies the thread as inactive.
   yield();
+}
+
+
+//The SVC Handler interprets the arguments for SVC Calls
+// so that user threads can properly yield() by generating
+// a SYSTick interrupt, which requires privileged access
+void SVCHandler(void)
+{
+  asm volatile ("ldr r0, [r13, #24]\n"
+                "sub r0, r0, #2\n"
+                "ldrb r0, [r0]\n"
+                "b handleSVC\n"
+    );
+}
+
+//Generates a SysTick Interrupt
+void generateSysTickInterrupt(void)
+{
+  NVIC_INT_CTRL_R |= NVIC_INT_CTRL_PENDSTSET;
+}
+
+//Handles SVC Codes: yield() will raise an SVC Exception
+// so that it can generate a SysTick Interrupt, but it must be in
+// privileged mode to do so, thus the SVC architecture
+void handleSVC(int code)
+{
+  if(code == YIELD)
+  {
+    generateSysTickInterrupt();
+  }
 }

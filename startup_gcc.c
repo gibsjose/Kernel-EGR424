@@ -14,7 +14,6 @@ static void NmiSR(void);
 static void FaultISR(void);
 static void IntDefaultHandler(void);
 extern void Scheduler(void);
-extern void SVCHandler(void);
 
 //*****************************************************************************
 //
@@ -44,7 +43,7 @@ void (* const g_pfnVectors[])(void) =
     0,                                      // Reserved
     0,                                      // Reserved
     0,                                      // Reserved
-    SVCHandler,                             // SVCall handler
+    Scheduler,                              // SVCall handler
     IntDefaultHandler,                      // Debug monitor handler
     0,                                      // Reserved
     IntDefaultHandler,                      // The PendSV handler
