@@ -23,19 +23,20 @@ void thread_UART(void)
 
 void thread_OLED(void)
 {
-  //for now, just write a simple string to the OLED
-  oled_d_clear();
-  oled_d_print_xy("Hello, world!", 40, 40);
+  while(1)
+  {
+    oled_d_clear();
+    oled_d_print_xy("Hello, world!", 40, 40);
+    yield();
+  }
 }
 
 void thread_LED(void)
 {
-  //for now, just turn on the LED
-  LED_TI = 1;
-}
-
-void thread_idle()
-{
-  //this keeps the processor running when there is no work to do.
-  while(1);
+  while(1)
+  {
+    unsigned i;
+    for(i = 0; i < 65535; i++); //murder time (well, kill it, really)
+    LED_TI ^= 1;  //toggle the LED
+  }
 }
