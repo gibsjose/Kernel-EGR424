@@ -63,22 +63,24 @@ void Scheduler(void)
   //Determine the next  thread to run
   do {
     // Round-robin scheduler
-    if (++currThread == NUM_THREADS) 
-    {
+    if (++currThread == NUM_THREADS) {
       currThread = 0;
     }
 
-    if (threads[currThread].active)
-    {
+    if (threads[currThread].active) {
+
       //Restore the thread state for the thread about to be executed
       restoreThreadState(threads[currThread].registers);
 
-      //fake a return to thread mode with unpriviledged access using the process stack
-      asm volatile("mov r1, 0xFFFFFFFFd\n"
-                   "bx r1\n");
-    } 
-    else 
-    {
+      //Fake a return to thread mode with unpriviledged access using the process stack
+      // by returning 0xfffffffd
+      asm volatile(
+      		"mov  r1, 0xfffd\n"
+      		"movt r1, 0xffff\n"
+            "bx r1\n"
+     	);
+
+    } else {
       i--;
     }
   } while (i > 0);

@@ -44,3 +44,25 @@ createThread:
     
 .L0:
     .word   threadStarter
+
+
+createThread:
+
+	;Store r4-r12 and PSP on array
+	stm r0, {r4-r12, r1}
+
+	;Initialize xPSR (first on stack) with 0x01000000 (Thumb bit set)
+	mov  r0, 0x0000
+	movt r0, 0x0100
+	push {r0} ;Does push work here?
+
+	;Store threadStarter as addressToReturnTo (second on stack)
+	ldr  r0, .L0
+	push {r0}
+
+	;Initialize r0-r3, r12, and r14
+	
+
+
+.L0:
+    .word   threadStarter
