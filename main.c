@@ -8,6 +8,7 @@
 #include "driverlib/uart.h"
 #include "drivers/rit128x96x4.h"
 #include "scheduler.h"
+#include "timer_driver.h"
 #include <string.h>
 
 int main(void)
