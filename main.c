@@ -40,15 +40,21 @@ int main(void)
   GPIO_PORTF_DIR_R = 0x01;
   GPIO_PORTF_DEN_R = 0x01;
 
+  //Enable global interrupts
+  IntMasterEnable();
+
   //Initialize Scheduler/Threads
   initThreads();
 
   //THREADS SHOULD BE RUNNING!
+
   SysTickInit();
 
-  privToUnpriv();
-  yield();  //never returns
+  yield();
+
+  iprintf("After yield()\r\n");
 
   while(1);
+
   exit(0);
 }

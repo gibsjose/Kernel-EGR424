@@ -1,18 +1,10 @@
 /*
  * Implement the thread creation task:
  *
- *   - initialize the jump buffer with appropriate values for
- *     R13 (stack) and R14 (first address to jump to)
- *   - all other registers are irrelevant upon thread creation
- *
- *   In the jump buffer, the R13 slot is set to the second parameter of this
- *   function (the top-of-stack address, passed in R1). The R14 slot is set to
- *   the address of the threadStarter() function.
- *
  *   The C prototype for this function call is:
- *       createThread(threads[i].state, threads[i].stack)
+ *       createThread(threads[i].registers, threads[i].stack)
  *   thus:
- *       R0 <-- state (a setjmp()-style jump buffer)
+ *       R0 <-- registers (the register array)
  *       R1 <-- stack (address of top-of-stack)
  */
     .syntax unified
@@ -22,52 +14,31 @@
     .thumb_func
     .type createThread,function
     .global createThread
-createThread:  
-
-  /* Save registers in the jump buffer. Their values are
-     not important when the thread is first created. This line is the same as
-     the first two lines of setjmp(), except we dont save SP and LR since we 
-     want to set these to our own values. Really, the only point of this 
-     instruction is to advance R0 to the right location in the jump buffer for 
-     pointing to SP (without having to do any math :-) */
-
-    stmea  r0!, { r4-r10, r11 }
-  
-  /* Now we save SP and LR in that order. SP is the R1 parameter, and we have
-   * to get the address of threadStarter() into a higher register (so they are
-   * placed in the jump buffer in the right order). */
-
-    ldr     R2, .L0
-    stmea   R0!, { R1, R2 }   @ Store "SP" and "LR" for the new thread
-    
-    bx      lr
-    
-.L0:
-    .word   threadStarter
-
 
 createThread:
 
-	;Store r4-r12 and PSP on array
-	stm 	r0, {r4-r12, r1}
+	@Store r4-r12 and PSP on array
+	stm 	r0, {r1, r4-r12}
 
-	;Initialize xPSR (first on stack) with 0x01000000 (Thumb bit set)
-	mov  	r2, 0x0000
+	@Initialize xPSR (first on stack) with 0x01000000 (Thumb bit set)
 	movt 	r2, 0x0100
-	;
+	movw  	r2, 0x0000
+	stmdb 	r1!, {r2}	@Store xPSR at the highest memory location on the stack
 
-	;Store threadStarter as addressToReturnTo (second on stack)
-	ldr  	r0, .L0
-	;
+	@Store threadStarter as addressToReturnTo (second on stack)
+	ldr  	r2, .L0
+	stmdb   r1!, {r2}	@Store addressToReturnTo (threadStarter) on second highest memory on stack
 
-	;Initialize r0-r3, r12, and r14
+	@Initialize r0-r3, r12, and r14
 	mov  	r0, #0
-	mov  	r1, #0
 	mov  	r2, #0
 	mov  	r3, #0
 	mov  	r12, #0
-	mov 	r14, #0
-	;
+	stmdb   r1!, {r0} 			@Simulate storing r14 as 0 by storing r0 instead
+	stmdb 	r1!, {r2, r3, r12}	@Store r0-r3, r12 (IP), and r14 (LR) on stack
+	stmdb   r1!, {r0, r2}		@Simulate storing r1 (0) on stack by storing a copy of r2
+
+	bx		lr
 
 .L0:
     .word   threadStarter

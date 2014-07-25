@@ -18,6 +18,5 @@
 
 //Initialize SysTick
 void SysTickInit();
-void Timer0AInit();
 
 #endif

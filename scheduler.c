@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "scheduler.h"
 
 //External user-space threads
@@ -23,11 +24,8 @@ static thread_t threadTable[] = {
 // Thread Table
 static threadStruct_t threads[NUM_THREADS];
 
-//This function is implemented in assembly language. It sets up the
-// initial jump-buffer (as would setjmp()) but with our own values
-// for the stack (passed to createThread()) and LR (always set to
-// threadStarter() for each thread).
-extern void createThread(char *stack);
+//@TODO Add header...
+extern void createThread(unsigned *p_registers, char *p_stack);
 
 void saveThreadState(unsigned *p_registers, char *p_stack);
 void restoreThreadState(unsigned *p_registers);
@@ -47,13 +45,13 @@ void Scheduler(void)
 {
   unsigned i;
 
-  if (!threads[currThread].active) 
-  {
+  iprintf("Start\r\n");
+
+  if (!threads[currThread].active) {
+    iprintf("Thread %d is inactive\r\n", currThread);
     free(threads[currThread].stack - STACK_SIZE);
     threads[currThread].stack = NULL;
-  }
-  else
-  {
+  } else {
     //Save current thread state if it is still active
     saveThreadState(threads[currThread].registers, threads[currThread].stack);
   }
@@ -69,15 +67,19 @@ void Scheduler(void)
 
     if (threads[currThread].active) {
 
+      iprintf("New thread: %d\r\n", currThread);
+
       //Restore the thread state for the thread about to be executed
       restoreThreadState(threads[currThread].registers);
+
+      iprintf("After restore thread state\r\n");
 
       //Fake a return to thread mode with unpriviledged access using the process stack
       // by returning 0xfffffffd
       asm volatile(
-      		"mov  r1, 0xfffd\n"
       		"movt r1, 0xffff\n"
-            "bx r1\n"
+          "movw r1, 0xfffd\n"
+          "bx r1\n"
      	);
 
     } else {
@@ -85,7 +87,7 @@ void Scheduler(void)
     }
   } while (i > 0);
   
-  // No active threads left. Leave the scheduler, hence the program.
+  // No active threads left. Leave the scheduler, hence the program
   return;
 }
 
@@ -101,18 +103,30 @@ void initThreads(void)
   // Create all the threads and allocate a stack for each one
   for (i = 0; i < NUM_THREADS; i++) 
   {
+
+    iprintf("Marking thread as active\r\n");
+
     //Mark thread as runnable
     threads[i].active = 1;
 
+    iprintf("Allocating stack\r\n");
+
     //Allocate stack
     threads[i].stack = (char *)malloc(STACK_SIZE) + STACK_SIZE;
+
     if (threads[i].stack == 0) {
-      //Out of memory; exit gracefully
+      iprintf("Out of memory!\r\n");
       exit(1);
     }
 
+    iprintf("Stack Allocated\r\n");
+
+    iprintf("Calling createThread\r\n");
+
     //Create each thread
-    createThread(threads[i].stack);
+    createThread(threads[i].registers, threads[i].stack);
+
+    iprintf("Returned from createThread\r\n");
   }
 }
 
@@ -152,7 +166,8 @@ void saveThreadState(unsigned *p_registers, char *p_stack)
 
 void restoreThreadState(unsigned *p_registers)
 {
-  asm volatile("ldria r1, [r0]!\n"
+  asm volatile("ldr r1, [r0]\n"
+               "add r0, r0, #4\n"
                "msr psp, r1\n"
                "ldm r0, {r4-r12}");
 }

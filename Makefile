@@ -18,7 +18,7 @@ SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/scheduler.c $(SRC_DIR)/threads.c $(SRC_DI
 LIBS = -ldriver-cm3
 OBJS = $(SOURCES:.c=.o)
 
-TARGETNAME = kernel_gibson_luckenbaugh
+TARGETNAME = kernel
 ELF = $(BIN_DIR)/$(TARGETNAME).elf
 BIN = $(BIN_DIR)/$(TARGETNAME).bin
 
@@ -35,7 +35,7 @@ all: $(TARGET)
 	@echo "Done"
 	@echo " "
 
-$(ELF): $(OBJS)
+$(ELF): $(OBJS) create.S
 	@echo "Building $@... "
 	$(CC) $(CFLAGS) $(INCLUDES) -o $(ELF) -T$(LS) $(LINKPATHS) -Wl,-Map,$(MAP) -Wl,--entry=ResetISR create.S $(OBJS) $(LIBS)
 	@echo "Done"
