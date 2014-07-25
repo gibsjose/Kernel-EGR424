@@ -29,6 +29,9 @@ saveThreadState:
     .type restoreThreadState,function
     .global restoreThreadState
 
+/*
+ * void restoreThreadState(unsigned *registers)
+ */
 restoreThreadState:
     bx lr
 

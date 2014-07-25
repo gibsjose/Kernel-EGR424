@@ -6,7 +6,7 @@ extern void thread_OLED(void);
 extern void thread_LED(void);
 
 //SVC Code handler
-void handleSVC(int code);
+//void handleSVC(int code);
 
 //Currently Active Thread
 unsigned currThread;
@@ -29,7 +29,7 @@ static threadStruct_t threads[NUM_THREADS];
 // threadStarter() for each thread).
 extern void createThread(char *stack);
 
-extern void saveThreadState(unsigned *p_registers);
+extern void saveThreadState(unsigned *p_registers, char *p_stack);
 extern void restoreThreadState(unsigned *p_registers);
 
 //Changes from privileged to unprivileged
@@ -55,7 +55,7 @@ void Scheduler(void)
   else
   {
     //Save current thread state if it is still active
-    saveThreadState(threads[currThread].registers);
+    saveThreadState(threads[currThread].registers, threads[currThread].stack);
   }
   
   i = NUM_THREADS;
@@ -147,6 +147,7 @@ void threadStarter(void)
 //The SVC Handler interprets the arguments for SVC Calls
 // so that user threads can properly yield() by generating
 // a SYSTick interrupt, which requires privileged access
+/*
 void SVCHandler(void)
 {
   asm volatile ("ldr r0, [r13, #24]\n"
@@ -155,6 +156,7 @@ void SVCHandler(void)
                 "b handleSVC\n"
     );
 }
+*/
 
 //Generates a SysTick Interrupt
 void generateSysTickInterrupt(void)
@@ -165,6 +167,7 @@ void generateSysTickInterrupt(void)
 //Handles SVC Codes: yield() will raise an SVC Exception
 // so that it can generate a SysTick Interrupt, but it must be in
 // privileged mode to do so, thus the SVC architecture
+/*
 void handleSVC(int code)
 {
   if(code == YIELD)
@@ -172,3 +175,4 @@ void handleSVC(int code)
     generateSysTickInterrupt();
   }
 }
+*/

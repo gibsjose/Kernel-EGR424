@@ -1,0 +1,193 @@
+# EGR 424 Project 3 Structure
+
+--------
+thread_t
+--------
+//Add char *register[40] to thread structure
+
+---------
+threads.c
+---------
+
+void thread1_UART(void)
+{
+	loop()
+	{
+		lock();
+		print();
+
+		yield();
+	}
+}
+
+void thread2_UART(void)
+{
+	loop()
+	{
+		lock();
+		print();
+		yield();
+	}
+}
+
+void thread3_LED(void)
+{
+	loop()
+	{
+		toggle_led();
+		//Show pre-emption here... let kernel take control
+	}
+}
+
+void thread4_OLED(void)
+{
+	loop()
+	{
+		write_string();
+		yield();
+	}
+}
+
+------
+main.c
+------
+
+void main(void)
+{
+	//Init UART, OLED, LED, Clock, etc.
+	initialize_all_peripherals();
+
+	//For each thread...
+	foreach(thread)
+	{
+		thread.active = 1;		//Make active
+		allocate_stack();		//Alloc stack and make sure it was alloc'd
+		createThread();			//Call createThread
+	}
+
+	//Initialize Systick Timer and Interrupt (1ms)
+	init_systick_interrupt();
+
+	//Set appropriate privilege level (if needed)
+	set_privilege_if_needed();
+
+	//Jump to scheduler (generate an SVC call)
+	// NOTE: SVC Handler and Systick Timer both use SCHEDULER routine
+	svc_call();
+
+	//Infinite loop
+	while(1);
+
+	//Exit
+	exit(0);
+}
+
+--------
+create.S
+--------
+//Change completely...
+//Function called once on creation of thread
+
+//Store r4-r12, PSP into an array (char array, length 40)
+//Store default values into r0-r3, r12, r14, AddressToReturnTo, xPSR
+// R0-R3, R12, R14 can be all zeros, AddressToReturnTo IS IMPORTANT!!!, Lookup xPSR defaults in datasheet
+// AddressToReturnTo must be the threadStarter function
+//C Usage: createThread(unsigned *registers, char *p_stack)
+
+
+Questions:
+
+4) Priv-> unpriv
+
+createThread:
+	stm r0, {r4-r12, r1}
+	mov r0, #0
+
+	???
+	;mov r15, =threadStarter	;PC
+
+	//Store
+	xPSR
+	AddressToReturnTo
+
+	msr apsr, r0
+	msr ipsr, r0
+	msr epsr
+
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	mov r14, #0
+
+
+---------
+SchedulerHandler
+---------
+
+//SVC AND SYSTICK! Therefore called every 1ms AND when yield() is called
+void SchedulerHandler(void)
+{
+	//Save state of current thread on array of 10 elements
+	save_state(current_thread);
+
+	//Identify next (active) thread to run
+	get_next_thread_to_run();
+
+	current_thread++ % NUM_THREADS;
+
+	//Restore the state of the next thread to run from array of 10 elements
+	restore_state(next_thread);
+
+	//Fake a return from handler to use THREAD MODE and PROCESS STACK
+	asm volatile (
+			"movt 	r0, 0xffff\n"
+			"mov  	r0, 0xfffd\n"
+			"bx 	r0"
+		);
+
+}
+
+
+
+
+-------------
+threadStarter
+-------------
+
+//This 
+void threadStarter(void)
+{
+	//No change!
+}
+
+----------
+save_state
+----------
+
+void save_state(unsigned *registers, char *p_stack)
+{
+	//Save registers that are not saved automatically i.e. (r4-r12, PSP) on the array of 10 elements
+	stm r0, {r4-r12, r1}
+}
+
+-------------
+restore_state
+-------------
+
+void restore_state(unsigned *registers)
+{
+	//Restore state from the array of 10 elements
+	ldria r1, [r0]!
+	msr prp, r1
+	ldm r0, {r4-r12}
+}
+
+
+Context-switch time measurement:
+	Toggle a GPIO Pin on context switch and measure with o-scope
+
+
+Extra Credit:
+	Two UART Threads with locks (LA 16 & 17)

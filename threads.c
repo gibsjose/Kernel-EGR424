@@ -17,6 +17,7 @@ void thread_UART(void)
 
   for (count = 0; count < 10; count++) {
     iprintf("In UART thread %u -- pass %d\r\n", currThread, count);
+    
     yield();
   }
 }
@@ -26,7 +27,10 @@ void thread_OLED(void)
   while(1)
   {
     oled_d_clear();
+    for(i = 0; i < 1000000; i++);
     oled_d_print_xy("Hello, world!", 40, 40);
+	for(i = 0; i < 1000000; i++);
+
     yield();
   }
 }
@@ -35,8 +39,8 @@ void thread_LED(void)
 {
   while(1)
   {
-    unsigned i;
-    for(i = 0; i < 65535; i++); //murder time (well, kill it, really)
+    unsigned long i;
+    for(i = 0; i < 1000000; i++); //murder time (well, kill it, really) //No... actually murder it. 65535 isn't enough, brah
     LED_TI ^= 1;  //toggle the LED
   }
 }
