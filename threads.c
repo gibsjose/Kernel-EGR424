@@ -27,10 +27,10 @@ void thread_OLED(void)
   while(1)
   {
     oled_d_clear();
+    unsigned i;
     for(i = 0; i < 1000000; i++);
     oled_d_print_xy("Hello, world!", 40, 40);
-	for(i = 0; i < 1000000; i++);
-
+	  for(i = 0; i < 1000000; i++);
     yield();
   }
 }
