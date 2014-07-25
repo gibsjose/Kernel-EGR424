@@ -21,8 +21,8 @@ createThread:
 	stm 	r0, {r1, r4-r12}
 
 	@Initialize xPSR (first on stack) with 0x01000000 (Thumb bit set)
-	movt 	r2, 0x0100
 	movw  	r2, 0x0000
+	movt 	r2, 0x0100
 	stmdb 	r1!, {r2}	@Store xPSR at the highest memory location on the stack
 
 	@Store threadStarter as addressToReturnTo (second on stack)

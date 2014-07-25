@@ -45,10 +45,7 @@ void Scheduler(void)
 {
   unsigned i;
 
-  iprintf("Start\r\n");
-
   if (!threads[currThread].active) {
-    iprintf("Thread %d is inactive\r\n", currThread);
     free(threads[currThread].stack - STACK_SIZE);
     threads[currThread].stack = NULL;
   } else {
@@ -67,18 +64,14 @@ void Scheduler(void)
 
     if (threads[currThread].active) {
 
-      iprintf("New thread: %d\r\n", currThread);
-
       //Restore the thread state for the thread about to be executed
       restoreThreadState(threads[currThread].registers);
-
-      iprintf("After restore thread state\r\n");
 
       //Fake a return to thread mode with unpriviledged access using the process stack
       // by returning 0xfffffffd
       asm volatile(
-      		"movt r1, 0xffff\n"
           "movw r1, 0xfffd\n"
+          "movt r1, 0xffff\n"
           "bx r1\n"
      	);
 
@@ -103,30 +96,32 @@ void initThreads(void)
   // Create all the threads and allocate a stack for each one
   for (i = 0; i < NUM_THREADS; i++) 
   {
-
-    iprintf("Marking thread as active\r\n");
-
     //Mark thread as runnable
     threads[i].active = 1;
 
-    iprintf("Allocating stack\r\n");
-
     //Allocate stack
     threads[i].stack = (char *)malloc(STACK_SIZE) + STACK_SIZE;
+
+    iprintf("stack[%d]: 0x%08X\r\n", i, threads[i].stack);
 
     if (threads[i].stack == 0) {
       iprintf("Out of memory!\r\n");
       exit(1);
     }
 
-    iprintf("Stack Allocated\r\n");
-
-    iprintf("Calling createThread\r\n");
-
     //Create each thread
     createThread(threads[i].registers, threads[i].stack);
 
-    iprintf("Returned from createThread\r\n");
+    iprintf("registers[0] (thread[%d].stack): 0x%08X\r\n\r\n", i, threads[i].registers[0]);
+
+    char * j;
+    for(j = threads[i].stack; j >= (threads[i].stack - 32); j-=4)
+    {
+      unsigned long stack_data = *(j - 3) & (*(j - 2) << (8 * 1)) & (*(j - 1) << (8 * 2)) & (*j << (8 * 3));
+      iprintf("threads[%d].stack: 0x%08X\r\n", i, stack_data);
+    }
+    
+    iprintf("Thread %d created\r\n\r\n", i);
   }
 }
 
