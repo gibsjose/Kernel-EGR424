@@ -29,8 +29,8 @@ static threadStruct_t threads[NUM_THREADS];
 // threadStarter() for each thread).
 extern void createThread(char *stack);
 
-extern void saveThreadState(unsigned *p_registers, char *p_stack);
-extern void restoreThreadState(unsigned *p_registers);
+void saveThreadState(unsigned *p_registers, char *p_stack);
+void restoreThreadState(unsigned *p_registers);
 
 //Changes from privileged to unprivileged
 void privToUnpriv(void)
@@ -143,6 +143,18 @@ void threadStarter(void)
   //This yield returns to the scheduler and never returns back since
   // the scheduler identifies the thread as inactive.
   yield();
+}
+
+void saveThreadState(unsigned *p_registers, char *p_stack)
+{
+  asm volatile("stm r0, {r1, r4-r12}");
+}
+
+void restoreThreadState(unsigned *p_registers)
+{
+  asm volatile("ldria r1, [r0]!\n"
+               "msr psp, r1\n"
+               "ldm r0, {r4-r12}");
 }
 
 
