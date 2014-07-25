@@ -32,5 +32,5 @@ saveThreadState:
  * void restoreThreadState(unsigned *registers)
  */
 restoreThreadState:
-    bx lr
-
+    ldria 	r1, [r0]! ;Load stack pointer from register array
+    msr 	psp, r1   ;Set the process stack pointer to stac

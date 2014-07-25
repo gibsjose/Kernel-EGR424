@@ -49,20 +49,25 @@ createThread:
 createThread:
 
 	;Store r4-r12 and PSP on array
-	stm r0, {r4-r12, r1}
+	stm 	r0, {r4-r12, r1}
 
 	;Initialize xPSR (first on stack) with 0x01000000 (Thumb bit set)
-	mov  r0, 0x0000
-	movt r0, 0x0100
-	push {r0} ;Does push work here?
+	mov  	r2, 0x0000
+	movt 	r2, 0x0100
+	;
 
 	;Store threadStarter as addressToReturnTo (second on stack)
-	ldr  r0, .L0
-	push {r0}
+	ldr  	r0, .L0
+	;
 
 	;Initialize r0-r3, r12, and r14
-	
-
+	mov  	r0, #0
+	mov  	r1, #0
+	mov  	r2, #0
+	mov  	r3, #0
+	mov  	r12, #0
+	mov 	r14, #0
+	;
 
 .L0:
     .word   threadStarter
