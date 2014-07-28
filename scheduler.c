@@ -25,7 +25,7 @@ static thread_t threadTable[] = {
 static threadStruct_t threads[NUM_THREADS];
 
 //@TODO Add header...
-extern void createThread(unsigned *p_registers, char *p_stack);
+extern void createThread(unsigned *p_registers, char **p_stack);
 
 void saveThreadState(unsigned *p_registers, char *p_stack);
 void restoreThreadState(unsigned *p_registers);
@@ -102,7 +102,7 @@ void initThreads(void)
     //Allocate stack
     threads[i].stack = (char *)malloc(STACK_SIZE) + STACK_SIZE;
 
-    iprintf("stack[%d]: 0x%08X\r\n", i, threads[i].stack);
+    iprintf("stack[%d]: 0x%X\r\n", i, (unsigned)threads[i].stack);
 
     if (threads[i].stack == 0) {
       iprintf("Out of memory!\r\n");
@@ -110,16 +110,9 @@ void initThreads(void)
     }
 
     //Create each thread
-    createThread(threads[i].registers, threads[i].stack);
+    createThread(threads[i].registers, &(threads[i].stack));
 
-    iprintf("registers[0] (thread[%d].stack): 0x%08X\r\n\r\n", i, threads[i].registers[0]);
-
-    char * j;
-    for(j = threads[i].stack; j >= (threads[i].stack - 32); j-=4)
-    {
-      unsigned long stack_data = *(j - 3) & (*(j - 2) << (8 * 1)) & (*(j - 1) << (8 * 2)) & (*j << (8 * 3));
-      iprintf("threads[%d].stack: 0x%08X\r\n", i, stack_data);
-    }
+    //iprintf("registers[0] (thread[%d].stack): 0x%08X\r\n\r\n", i, threads[i].registers[0]);
     
     iprintf("Thread %d created\r\n\r\n", i);
   }
