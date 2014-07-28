@@ -102,8 +102,6 @@ void initThreads(void)
     //Allocate stack
     threads[i].stack = (char *)malloc(STACK_SIZE) + STACK_SIZE;
 
-    iprintf("stack[%d]: 0x%X\r\n", i, (unsigned)threads[i].stack);
-
     if (threads[i].stack == 0) {
       iprintf("Out of memory!\r\n");
       exit(1);

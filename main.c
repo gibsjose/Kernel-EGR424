@@ -34,11 +34,13 @@ int main(void)
                        UART_CONFIG_PAR_NONE));
 
   //Enable the GPIO Port connected to the LED (Port F)
-  SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
+  SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF;
 
   //Enable the GPIO Pin connected to the LED (PF0) and set it to be an output pin
   GPIO_PORTF_DIR_R = 0x01;
   GPIO_PORTF_DEN_R = 0x01;
+
+  RIT128x96x4StringDraw("Project 3 asdf", 20,  20, 15);
 
   //Enable global interrupts
   IntMasterEnable();
