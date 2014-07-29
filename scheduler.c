@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include "inc/hw_types.h"
+#include "driverlib/gpio.h"
 #include "scheduler.h"
 
 //External user-space threads
@@ -42,9 +44,27 @@ void privToUnpriv(void)
     );
 }
 
+void PC5Low(void)
+{
+  //Write a 0 (0x11011111)
+  GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_5, 0xDF);
+}
+
+void PC5High(void)
+{
+  //Write a 1 (0x11111111)
+  GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_5, 0xFF);
+}
+
 //Scheduler (SysTick 1ms Handler)
 void Scheduler(void)
 {
+  //Set PC5 Low
+  //PC5Low();
+
+  //Set PC5 High (To measure context switch)
+  //PC5High();
+
   //Save current thread state
   saveThreadState(threads[currThread].registers);
 
@@ -61,6 +81,9 @@ void Scheduler(void)
     if (threads[currThread].active) {
       //Restore the thread state for the thread about to be executed
       restoreThreadState(threads[currThread].registers);
+
+      //Set PC5 Low (falling edge)
+      //PC5Low();
 
       //Fake a return to thread mode with unpriviledged access using the process stack
       // by returning 0xfffffffd

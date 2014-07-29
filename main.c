@@ -40,7 +40,8 @@ int main(void)
   GPIO_PORTF_DIR_R = 0x01;
   GPIO_PORTF_DEN_R = 0x01;
 
-  RIT128x96x4StringDraw("Project 3 asdf", 20,  20, 15);
+  // Set PC5 (GPIO) as GPIO Output for measuring context switch
+  GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_5);
 
   //Enable global interrupts
   IntMasterEnable();
@@ -48,14 +49,13 @@ int main(void)
   //Initialize Scheduler/Threads
   initThreads();
 
-  //THREADS SHOULD BE RUNNING!
-
+  //Initialize SysTick Interrupt
   SysTickInit();
 
+  //Yeild() to give control to scheduler
   yield();
 
-  iprintf("After yield()\r\n");
-
+  //Loop forever
   while(1);
 
   exit(0);
