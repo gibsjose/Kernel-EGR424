@@ -14,7 +14,7 @@ UTILS_DIR = C\:/StellarisWare/utils
 INCLUDES = -IC\:/StellarisWare -IC\:/StellarisWare/boards/ek-lm3s6965
 LINKPATHS = -LC\:/StellarisWare/driverlib/gcc-cm3 -LC\:/Program\ Files\ \(x86\)/CodeSourcery/Sourcery\ G++\ Lite/arm-none-eabi/lib/thumb2/
 
-SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/scheduler.c $(SRC_DIR)/threads.c $(SRC_DIR)/timer_driver.c $(SRC_DIR)/oled_driver.c $(SRC_DIR)/startup_gcc.c $(SRC_DIR)/syscalls.c $(DRV_DIR)/rit128x96x4.c
+SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/scheduler.c $(SRC_DIR)/threads.c $(SRC_DIR)/lock.c $(SRC_DIR)/timer_driver.c $(SRC_DIR)/oled_driver.c $(SRC_DIR)/startup_gcc.c $(SRC_DIR)/syscalls.c $(DRV_DIR)/rit128x96x4.c
 LIBS = -ldriver-cm3
 OBJS = $(SOURCES:.c=.o)
 

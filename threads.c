@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "scheduler.h"
 #include "oled_driver.h"
+#include "lock.h"
 
 #define LED_TI (HWREG(0x40025000 + 0x004))
 
@@ -11,15 +12,46 @@
 // running.
 extern unsigned currThread;
 
-void thread_UART(void)
+// This is the lock variable used by all threads.
+extern lock_t UARTthreadlock;
+
+void thread_UART1(void)
 {
   unsigned count;
   volatile long i;
 
-  for (count = 0; count < 20; count++) {
-    for(i = 0; i < 100000; i++);
-    iprintf("In UART thread %d -- pass %d\r\n", currThread, count);
-    yield();
+  while(1)
+  {
+    if(lock_acquire(&UARTthreadlock, currThread))
+    {
+      for (count = 0; count < 3; count++) {
+        for(i = 0; i < 100000; i++);
+        iprintf("In UART thread %d -- pass %d\r\n", currThread, count);
+        yield();
+      }
+      lock_release(&UARTthreadlock, currThread);
+      break;  //end the while loop, and thus the thread
+    }
+  }
+}
+
+void thread_UART2(void)
+{
+  unsigned count;
+  volatile long i;
+  
+  while(1)
+  {
+    if(lock_acquire(&UARTthreadlock, currThread))
+    {
+      for (count = 0; count < 5; count++) {
+        for(i = 0; i < 100000; i++);
+        iprintf("In UART thread %d -- pass %d\r\n", currThread, count);
+        yield();
+      }
+      lock_release(&UARTthreadlock, currThread);
+      break;  //end the while loop, and thus the thread
+    }
   }
 }
 

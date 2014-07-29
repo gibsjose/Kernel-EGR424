@@ -2,23 +2,28 @@
 #include "inc/hw_types.h"
 #include "driverlib/gpio.h"
 #include "scheduler.h"
-
-//External user-space threads
-extern void thread_UART(void);
-extern void thread_OLED(void);
-extern void thread_LED(void);
+#include "lock.h"
 
 //SVC Code handler
 //void handleSVC(int code);
+
+lock_t UARTthreadlock;
 
 //Currently Active Thread
 int currThread = -1;
 
 volatile unsigned needToSaveThreadStates = 0;
 
+//External user-space threads
+extern void thread_UART1(void);
+extern void thread_UART2(void);
+extern void thread_OLED(void);
+extern void thread_LED(void);
+
 //Thread Function Table
 static thread_t threadTable[] = {
-  thread_UART,
+  thread_UART1,
+  thread_UART2,
   thread_OLED,
   thread_LED
 };
@@ -78,6 +83,9 @@ void initThreads(void)
     //Create each thread
     createThread(threads[i].registers, &(threads[i].stack));
   }
+
+  //initialize the global lock variable for the UART threads
+  lock_init(&UARTthreadlock);
 }
 
 //This function is called from within user thread context. It allows the user
