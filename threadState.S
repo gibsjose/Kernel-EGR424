@@ -35,4 +35,8 @@ restoreThreadState:
     add r0, r0, #4
     msr psp, r1
     ldm r0, {r4-r12}
+    
+    @Fake a return to thread mode with unpriviledged access using the process stack
+    movw lr, 0xfffd
+    movt lr, 0xffff
     bx lr

@@ -14,7 +14,7 @@ extern unsigned currThread;
 void thread_UART(void)
 {
   unsigned count;
-  volatile unsigned i;
+  volatile long i;
 
   for (count = 0; count < 20; count++) {
     for(i = 0; i < 100000; i++);
@@ -27,7 +27,7 @@ void thread_OLED(void)
 {
   while(1)
   {
-    volatile unsigned i;
+    volatile long i;
 
     oled_d_clear();
     for(i = 0; i < 100000; i++);

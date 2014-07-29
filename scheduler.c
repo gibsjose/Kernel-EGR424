@@ -34,72 +34,22 @@ extern void createThread(unsigned *p_registers, char **p_stack);
 extern void saveThreadState(unsigned *p_registers);
 extern void restoreThreadState(unsigned *p_registers);
 
-//Changes from privileged to unprivileged
-void privToUnpriv(void)
-{
-  asm volatile( "mrs r3, control\n"
-                "orr r3, r3, #1\n"
-                "msr control, r3\n"
-                "isb"
-    );
-}
-
-void PC5Low(void)
-{
-  //Write a 0 (0x11011111)
-  GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_5, 0xDF);
-}
-
-void PC5High(void)
-{
-  //Write a 1 (0x11111111)
-  GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_5, 0xFF);
-}
-
 //Scheduler (SysTick 1ms Handler)
 void Scheduler(void)
 {
-  //Set PC5 Low
-  //PC5Low();
-
-  //Set PC5 High (To measure context switch)
-  //PC5High();
-
   //Save current thread state
-  saveThreadState(threads[currThread].registers);
+  if(currThread != -1)
+    saveThreadState(threads[currThread].registers);
 
-  unsigned i;
-  i = NUM_THREADS;
-
-  //Determine the next thread to run
-  do {
-    // Round-robin scheduler
+  do
+  {
     if (++currThread >= NUM_THREADS) {
       currThread = 0;
     }
+  } while (threads[currThread].active != 1);
 
-    if (threads[currThread].active) {
-      //Restore the thread state for the thread about to be executed
-      restoreThreadState(threads[currThread].registers);
-
-      //Set PC5 Low (falling edge)
-      //PC5Low();
-
-      //Fake a return to thread mode with unpriviledged access using the process stack
-      // by returning 0xfffffffd
-      asm volatile(
-          "movw r1, 0xfffd\n"
-          "movt r1, 0xffff\n"
-          "bx r1\n"
-     	);
-
-    } else {
-      i--;
-    }
-  } while (i > 0);
-  
-  // No active threads left. Leave the scheduler, hence the program
-  return;
+  //Restore the thread state for the thread about to be executed
+  restoreThreadState(threads[currThread].registers);
 }
 
 //Thread Initialization

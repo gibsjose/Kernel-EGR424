@@ -40,9 +40,6 @@ int main(void)
   GPIO_PORTF_DIR_R = 0x01;
   GPIO_PORTF_DEN_R = 0x01;
 
-  // Set PC5 (GPIO) as GPIO Output for measuring context switch
-  GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_5);
-
   //Enable global interrupts
   IntMasterEnable();
 
