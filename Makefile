@@ -37,7 +37,7 @@ all: $(TARGET)
 
 $(ELF): $(OBJS) create.S
 	@echo "Building $@... "
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(ELF) -T$(LS) $(LINKPATHS) -Wl,-Map,$(MAP) -Wl,--entry=ResetISR create.S $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(ELF) -T$(LS) $(LINKPATHS) -Wl,-Map,$(MAP) -Wl,--entry=ResetISR create.S threadState.S $(OBJS) $(LIBS)
 	@echo "Done"
 	@echo " "
 

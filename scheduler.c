@@ -10,7 +10,9 @@ extern void thread_LED(void);
 //void handleSVC(int code);
 
 //Currently Active Thread
-unsigned currThread;
+int currThread = -1;
+
+volatile unsigned needToSaveThreadStates = 0;
 
 //Thread Function Table
 static thread_t threadTable[] = {
@@ -27,8 +29,8 @@ static threadStruct_t threads[NUM_THREADS];
 //@TODO Add header...
 extern void createThread(unsigned *p_registers, char **p_stack);
 
-void saveThreadState(unsigned *p_registers);
-void restoreThreadState(unsigned *p_registers);
+extern void saveThreadState(unsigned *p_registers);
+extern void restoreThreadState(unsigned *p_registers);
 
 //Changes from privileged to unprivileged
 void privToUnpriv(void)
@@ -43,33 +45,25 @@ void privToUnpriv(void)
 //Scheduler (SysTick 1ms Handler)
 void Scheduler(void)
 {
-  /*unsigned i;
-
-  if (!threads[currThread].active) {
-    iprintf("Freeing stack on thread %u\r\n", currThread);
-    free(threads[currThread].stack - STACK_SIZE);
-    threads[currThread].stack = NULL;
-  } else {
-    //Save current thread state if it is still active
+  //Save current thread state
+  if(threads[currThread].active)
+  {
     saveThreadState(threads[currThread].registers);
   }
-  
+
+  unsigned i;
   i = NUM_THREADS;
 
-  //Determine the next  thread to run
+  //Determine the next thread to run
   do {
     // Round-robin scheduler
     if (++currThread >= NUM_THREADS) {
       currThread = 0;
     }
-    iprintf("t[%u]\r\n", currThread);
 
     if (threads[currThread].active) {
-
       //Restore the thread state for the thread about to be executed
       restoreThreadState(threads[currThread].registers);
-
-      iprintf("rT[%u]\r\n", currThread);
 
       //Fake a return to thread mode with unpriviledged access using the process stack
       // by returning 0xfffffffd
@@ -83,18 +77,6 @@ void Scheduler(void)
       i--;
     }
   } while (i > 0);
-  */
-
-  saveThreadState(threads[currThread].registers);
-  currThread = (1 + currThread) % NUM_THREADS;
-  restoreThreadState(threads[currThread].registers);
-  //Fake a return to thread mode with unpriviledged access using the process stack
-  // by returning 0xfffffffd
-  asm volatile(
-      "movw r1, 0xfffd\n"
-      "movt r1, 0xffff\n"
-      "bx r1\n"
-  );
   
   // No active threads left. Leave the scheduler, hence the program
   return;
@@ -161,6 +143,7 @@ void threadStarter(void)
   yield();
 }
 
+/*
 void saveThreadState(unsigned *p_registers)
 {
   asm volatile("mrs r1, psp\n"
@@ -173,7 +156,7 @@ void restoreThreadState(unsigned *p_registers)
                "add r0, r0, #4\n"
                "msr psp, r1\n"
                "ldm r0, {r4-r12}");
-}
+}*/
 
 
 //The SVC Handler interprets the arguments for SVC Calls
