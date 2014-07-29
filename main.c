@@ -8,6 +8,7 @@
 #include "driverlib/uart.h"
 #include "drivers/rit128x96x4.h"
 #include "scheduler.h"
+#include "oled_driver.h"
 #include "timer_driver.h"
 #include <string.h>
 
@@ -17,9 +18,8 @@ int main(void)
   SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
                  SYSCTL_XTAL_8MHZ);
 
-  // Initialize the OLED display and write status.
-  RIT128x96x4Init(1000000);
-  RIT128x96x4StringDraw("Project 3 - LG", 20,  0, 15);
+  // Initialize the OLED display
+  oled_d_init();
 
   // Enable the peripherals used by this example.
   SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
@@ -52,8 +52,6 @@ int main(void)
   //Yeild() to give control to scheduler
   yield();
 
-  //Loop forever
-  while(1);
-
+  //this should never execute
   exit(0);
 }

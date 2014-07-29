@@ -7,7 +7,6 @@
 #include "inc/hw_types.h"
 
 #define STACK_SIZE (4096)   // Amount of stack space for each thread
-#define YIELD 		0x88	//Arbitrary value for yield() to call
 
 //Thread structure
 typedef struct {

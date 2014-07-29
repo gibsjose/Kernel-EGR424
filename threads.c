@@ -5,14 +5,10 @@
 
 #define LED_TI (HWREG(0x40025000 + 0x004))
 
-// These are the user-space threads. Note that they are completely oblivious
-// to the technical concerns of the scheduler. The only interface to the
-// scheduler is the single function yield() and the global variable
-// currThread which indicates the number of the thread currently
-// running.
+// currThread indicates the number of the thread currently running.
 extern unsigned currThread;
 
-// This is the lock variable used by all threads.
+// This is the lock variable used by the UART threads to "lock" the peripheral.
 extern lock_t UARTthreadlock;
 
 void thread_UART1(void)
@@ -30,7 +26,7 @@ void thread_UART1(void)
         yield();
       }
       lock_release(&UARTthreadlock, currThread);
-      break;  //end the while loop, and thus the thread
+      yield();
     }
   }
 }
@@ -47,10 +43,9 @@ void thread_UART2(void)
       for (count = 0; count < 5; count++) {
         for(i = 0; i < 100000; i++);
         iprintf("In UART thread %d -- pass %d\r\n", currThread, count);
-        yield();
       }
       lock_release(&UARTthreadlock, currThread);
-      break;  //end the while loop, and thus the thread
+      yield();
     }
   }
 }

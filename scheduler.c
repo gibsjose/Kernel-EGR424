@@ -4,9 +4,6 @@
 #include "scheduler.h"
 #include "lock.h"
 
-//SVC Code handler
-//void handleSVC(int code);
-
 lock_t UARTthreadlock;
 
 //Currently Active Thread
@@ -33,10 +30,14 @@ static thread_t threadTable[] = {
 // Thread Table
 static threadStruct_t threads[NUM_THREADS];
 
-//@TODO Add header...
+// Creates the thread by putting the starting values in the p_registers array
+// and in the stack, which is identified by a pointer to the stack pointer
 extern void createThread(unsigned *p_registers, char **p_stack);
 
+//Saves the thread state in the array identified by p_registers
 extern void saveThreadState(unsigned *p_registers);
+
+//restores the thread state from the data in the array identified by p_registers
 extern void restoreThreadState(unsigned *p_registers);
 
 //Scheduler (SysTick 1ms Handler)
@@ -117,35 +118,8 @@ void threadStarter(void)
   yield();
 }
 
-//The SVC Handler interprets the arguments for SVC Calls
-// so that user threads can properly yield() by generating
-// a SYSTick interrupt, which requires privileged access
-/*
-void SVCHandler(void)
-{
-  asm volatile ("ldr r0, [r13, #24]\n"
-                "sub r0, r0, #2\n"
-                "ldrb r0, [r0]\n"
-                "b handleSVC\n"
-    );
-}
-*/
-
 //Generates a SysTick Interrupt
 void generateSysTickInterrupt(void)
 {
   NVIC_INT_CTRL_R |= NVIC_INT_CTRL_PENDSTSET;
 }
-
-//Handles SVC Codes: yield() will raise an SVC Exception
-// so that it can generate a SysTick Interrupt, but it must be in
-// privileged mode to do so, thus the SVC architecture
-/*
-void handleSVC(int code)
-{
-  if(code == YIELD)
-  {
-    generateSysTickInterrupt();
-  }
-}
-*/
