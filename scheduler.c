@@ -46,10 +46,7 @@ void privToUnpriv(void)
 void Scheduler(void)
 {
   //Save current thread state
-  if(threads[currThread].active)
-  {
-    saveThreadState(threads[currThread].registers);
-  }
+  saveThreadState(threads[currThread].registers);
 
   unsigned i;
   i = NUM_THREADS;
@@ -101,16 +98,12 @@ void initThreads(void)
     threads[i].stack = (char *)malloc(STACK_SIZE) + STACK_SIZE;
 
     if (threads[i].stack == 0) {
-      iprintf("Out of memory!\r\n");
+      //out of memory
       exit(1);
     }
 
     //Create each thread
     createThread(threads[i].registers, &(threads[i].stack));
-
-    //iprintf("registers[0] (thread[%d].stack): 0x%08X\r\n\r\n", i, threads[i].registers[0]);
-    
-    iprintf("Thread %d created\r\n\r\n", i);
   }
 }
 
@@ -142,22 +135,6 @@ void threadStarter(void)
   // the scheduler identifies the thread as inactive.
   yield();
 }
-
-/*
-void saveThreadState(unsigned *p_registers)
-{
-  asm volatile("mrs r1, psp\n"
-               "stm r0, {r1, r4-r12}");
-}
-
-void restoreThreadState(unsigned *p_registers)
-{
-  asm volatile("ldr r1, [r0]\n"
-               "add r0, r0, #4\n"
-               "msr psp, r1\n"
-               "ldm r0, {r4-r12}");
-}*/
-
 
 //The SVC Handler interprets the arguments for SVC Calls
 // so that user threads can properly yield() by generating
